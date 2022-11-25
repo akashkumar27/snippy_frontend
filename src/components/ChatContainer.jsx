@@ -1,121 +1,123 @@
 /* eslint-disable no-undef */
-import React, {useState,useEffect, useRef} from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import ChatInput from './ChatInput'
 import Logout from './Logout'
 import axios from 'axios'
 import { getAllMessagesRoute, sendMessageRoute } from '../utils/APIRoutes'
-import {v4 as uuidv4} from "uuid"
+import { v4 as uuidv4 } from "uuid"
 
 
 const BROADCAST_ID = "636d173abf9c289d253f80ce";
 
-export default function ChatContainer({currentChat,currentUser,socket}) {
+export default function ChatContainer({ currentChat, currentUser, socket }) {
     const [messages, setMessages] = useState([])
     const [arrivalMessage, setArrivalMessage] = useState(null)
     const scrollRef = useRef()
-    
-    const getMessages = async() => {
-        if(currentChat){
-            const ans =  await axios.post(getAllMessagesRoute, {
-                from : currentUser._id,
-                to : currentChat._id,
-                isBroadcast:currentChat._id===BROADCAST_ID,
+
+    const getMessages = async () => {
+        if (currentChat) {
+            const ans = await axios.post(getAllMessagesRoute, {
+                from: currentUser._id,
+                to: currentChat._id,
+                isBroadcast: currentChat._id === BROADCAST_ID,
             })
             return ans
-        } 
+        }
     }
 
     useEffect(() => {
-        if(currentChat){
-            getMessages().then(response =>{
+        if (currentChat) {
+            getMessages().then(response => {
                 setMessages(response.data)
             })
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[currentChat])
-    
-    const handleSendMsg = async(msg) => {
-        
-        await axios.post(sendMessageRoute,{
-            from : currentUser._id,
-            to : currentChat._id,
-            isBroadcast:currentChat._id===BROADCAST_ID,
-            message: msg,
-            username : currentUser.username
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentChat])
+
+    const handleSendMsg = async (msg) => {
+        await axios.post(sendMessageRoute, {
+            file: msg.file,
+            from: currentUser._id,
+            to: currentChat._id,
+            isBroadcast: currentChat._id === BROADCAST_ID,
+            message: msg.msg,
+            username: currentUser.username
+        }, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => {
+            console.log(res)
         })
-        socket.current.emit("send-msg",{
-            from :currentUser._id,
-            to : currentChat._id,
-            message: msg,
+        socket.current.emit("send-msg", {
+            from: currentUser._id,
+            to: currentChat._id,
+            message: msg.msg,
         })
 
         const msgs = [...messages]
-        msgs.push({fromSelf:true, message:msg})
+        msgs.push({ fromSelf: true, message: msg.msg })
         setMessages(msgs)
     }
 
     //might be the reason for previous issue
 
-    useEffect(()=>{
-        if(socket.current){
-            socket.current.on("msg-receive",(msg)=>{
-                setArrivalMessage({fromSelf : false, message : msg})
+    useEffect(() => {
+        if (socket.current) {
+            socket.current.on("msg-receive", (msg) => {
+                setArrivalMessage({ fromSelf: false, message: msg })
             })
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         arrivalMessage && setMessages((prev) => [...prev, arrivalMessage])
-    },[arrivalMessage])
+    }, [arrivalMessage])
 
-    useEffect(()=>{
-        scrollRef.current?.scrollIntoView({behaviour : "smooth"})
-    },[messages])
-    
+    useEffect(() => {
+        scrollRef.current?.scrollIntoView({ behaviour: "smooth" })
+    }, [messages])
+
     return (
-    <>
-    {
-        currentChat && (
-            <Container>
-                <div className="chat-header">
-                    <div className="user-details">
-                        <div className="avatar">
-                            <img 
-                            src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} 
-                            alt="avatar"  
-                            />
-                        </div>
-                        <div className="username">
-                            <h3>{currentChat.username}</h3>
-                        </div>
-                    </div>
-                    <Logout />
-                </div>
-                <div className="chat-messages">
-                    {
-                        messages.map((message) => {
-                            return(
-                                <div ref = {scrollRef} key = {uuidv4()} >
-                                    <div className={`message ${message.fromSelf ? "sended" : "received"}`}>
-                                        <div className="content">
-                                            <p>
-                                                {currentChat._id===BROADCAST_ID ? (message.fromSelf ? message.message : (message.username+" : "+message.message) ) : message.message}
-                                            </p>
-                                        </div>
-                                    </div>
+        <>
+            {
+                currentChat && (
+                    <Container>
+                        <div className="chat-header">
+                            <div className="user-details">
+                                <div className="avatar">
+                                    <img
+                                        src={`data:image/svg+xml;base64,${currentChat.avatarImage}`}
+                                        alt="avatar"
+                                    />
                                 </div>
-                            )
-                        })
-                    }
-                </div>
-                <ChatInput handleSendMsg = {handleSendMsg} />
-            </Container>
-        )
-    }
-    </>
-  )
+                                <div className="username">
+                                    <h3>{currentChat.username}</h3>
+                                </div>
+                            </div>
+                            <Logout />
+                        </div>
+                        <div className="chat-messages">
+                            {
+                                messages.map((message) => {
+                                    return (
+                                        <div ref={scrollRef} key={uuidv4()} >
+                                            <div className={`message ${message.fromSelf ? "sended" : "received"}`}>
+                                                <div className="content">
+                                                    <p>
+                                                        {currentChat._id === BROADCAST_ID ? (message.fromSelf ? message.message : (message.username + " : " + message.message)) : message.message}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            }
+                        </div>
+                        <ChatInput handleSendMsg={handleSendMsg} />
+                    </Container>
+                )
+            }
+        </>
+    )
 }
 
 const Container = styled.div`

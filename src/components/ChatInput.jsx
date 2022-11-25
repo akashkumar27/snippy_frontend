@@ -1,20 +1,20 @@
-import React, { useState,useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import styled from 'styled-components'
 import Picker from "emoji-picker-react"
 import { IoMdSend } from "react-icons/io"
 import { BsEmojiSmileFill } from "react-icons/bs"
-import {useOnClickOutside} from "../utils/useOutsideClick"
-export default function ChatInput({handleSendMsg}) {
+import { useOnClickOutside } from "../utils/useOutsideClick"
+export default function ChatInput({ handleSendMsg }) {
     const ref = useRef();
-    
+
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)
     const [msg, setMsg] = useState("")
-    useOnClickOutside(ref,()=>setShowEmojiPicker(false))
+    const [file, setFile] = useState();
+    useOnClickOutside(ref, () => setShowEmojiPicker(false))
     const handleEmojiPickerHideShow = () => {
-        setShowEmojiPicker(prev=>!prev)
+        setShowEmojiPicker(prev => !prev)
     }
-
-    const handleEmojiClick = (emoji,event) =>{
+    const handleEmojiClick = (emoji, event) => {
         console.log(emoji)
         let message = msg
         message += emoji.emoji
@@ -23,8 +23,9 @@ export default function ChatInput({handleSendMsg}) {
 
     const sendChat = (event) => {
         event.preventDefault()
-        if(msg.length > 0){
-            handleSendMsg(msg)
+        if (msg.length > 0 || file) {
+            handleSendMsg({ msg: msg, file: file })
+            setFile()
             setMsg("")
         }
     }
@@ -33,24 +34,25 @@ export default function ChatInput({handleSendMsg}) {
         <Container>
             <div className="button-container">
                 <div className="emoji">
-                    <BsEmojiSmileFill onClick={handleEmojiPickerHideShow} onClickOutside = {()=>setShowEmojiPicker(false)} />
+                    <BsEmojiSmileFill onClick={handleEmojiPickerHideShow} onClickOutside={() => setShowEmojiPicker(false)} />
                     {
-                        showEmojiPicker && <div ref={ref}><Picker  onEmojiClick ={handleEmojiClick} /></div>
+                        showEmojiPicker && <div ref={ref}><Picker onEmojiClick={handleEmojiClick} /></div>
                     }
                 </div>
             </div>
             <form className='input-container' onSubmit={(e) => sendChat(e)} >
                 <input
-                    type = "file"
-                    multiple
+                    type="file"
+                    name="file"
                     accept='image/*'
+                    onChange={(event => setFile(event.target.files[0]))}
                 />
-                <input 
+                <input
                     type="text"
-                    placeholder='type your message here' 
-                    value = {msg} 
-                    onChange = {(e) => {
-                        setMsg(e.target.value) 
+                    placeholder='type your message here'
+                    value={msg}
+                    onChange={(e) => {
+                        setMsg(e.target.value)
                     }}
                 />
                 <button type="submit" >
