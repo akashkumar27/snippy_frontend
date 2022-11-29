@@ -36,6 +36,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     }, [currentChat])
 
     const handleSendMsg = async (msg) => {
+        console.log(msg)
         await axios.post(sendMessageRoute, {
             file: msg.file,
             from: currentUser._id,
@@ -45,16 +46,15 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
             username: currentUser.username
         }, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => {
             console.log(res)
+            const msgs = [...messages]
+            msgs.push({ fromSelf: true, message: msg.msg, image: res.data.filename })
+            setMessages(msgs)
         })
         socket.current.emit("send-msg", {
             from: currentUser._id,
             to: currentChat._id,
             message: msg.msg,
         })
-
-        const msgs = [...messages]
-        msgs.push({ fromSelf: true, message: msg.msg })
-        setMessages(msgs)
     }
 
     //might be the reason for previous issue
@@ -67,7 +67,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
+    console.log(messages)
     useEffect(() => {
         arrivalMessage && setMessages((prev) => [...prev, arrivalMessage])
     }, [arrivalMessage])
@@ -105,6 +105,11 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
                                                     <p>
                                                         {currentChat._id === BROADCAST_ID ? (message.fromSelf ? message.message : (message.username + " : " + message.message)) : message.message}
                                                     </p>
+                                                    {
+                                                        message.image ?
+                                                            <img style={{ width: 150, height: 150 }} height alt="" src={`http://localhost:5000/api/messages/getPhotos/${message.image}`} />
+                                                            : null
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
