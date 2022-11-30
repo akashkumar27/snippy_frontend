@@ -7,8 +7,8 @@ import axios from 'axios'
 import { getAllMessagesRoute, sendMessageRoute } from '../utils/APIRoutes'
 import { v4 as uuidv4 } from "uuid"
 
-
-const BROADCAST_ID = "636d173abf9c289d253f80ce";
+const BROADCAST_ID = process.env.REACT_APP_BROAD_CAST
+const PORT = process.env.REACT_APP_PORT
 
 export default function ChatContainer({ currentChat, currentUser, socket }) {
     const [messages, setMessages] = useState([])
@@ -107,7 +107,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
                                                     </p>
                                                     {
                                                         message.image ?
-                                                            <img style={{ width: 150, height: 150 }} height alt="" src={`http://localhost:5000/api/messages/getPhotos/${message.image}`} />
+                                                            <img style={{ width: 150, height: 150 }} height alt="" src={`${PORT}/api/messages/getPhotos/${message.image}`} />
                                                             : null
                                                     }
                                                 </div>
