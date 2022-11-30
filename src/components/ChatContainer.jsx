@@ -36,7 +36,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     }, [currentChat])
 
     const handleSendMsg = async (msg) => {
-        console.log(msg)
         await axios.post(sendMessageRoute, {
             file: msg.file,
             from: currentUser._id,
@@ -45,15 +44,17 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
             message: msg.msg,
             username: currentUser.username
         }, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => {
-            console.log(res)
             const msgs = [...messages]
             msgs.push({ fromSelf: true, message: msg.msg, image: res.data.filename })
             setMessages(msgs)
-        })
-        socket.current.emit("send-msg", {
-            from: currentUser._id,
-            to: currentChat._id,
-            message: msg.msg,
+            socket.current.emit("send-msg", {
+                from: currentUser._id,
+                to: currentChat._id,
+                message: msg.msg,
+                image: res.data.filename,
+                isBroadcast: currentChat._id === BROADCAST_ID,
+                username: currentUser.username
+            })
         })
     }
 
@@ -62,12 +63,11 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     useEffect(() => {
         if (socket.current) {
             socket.current.on("msg-receive", (msg) => {
-                setArrivalMessage({ fromSelf: false, message: msg })
+                setArrivalMessage({ fromSelf: false, message: msg.message, image: msg.image, username: msg.username })
             })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-    console.log(messages)
     useEffect(() => {
         arrivalMessage && setMessages((prev) => [...prev, arrivalMessage])
     }, [arrivalMessage])
